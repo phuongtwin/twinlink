@@ -1,13 +1,21 @@
 #!/bin/sh
 
-# 1. Force load Homebrew and system paths into the cloud server terminal context
+# 1. Prevent Ruby encoding encoding issues on the server
+export LANG=en_US.UTF-8
+
+# 2. Expose standard Homebrew paths where CocoaPods lives
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-# 2. Check if cocoa pods is available; install it if missing
-if ! command -v pod &> /dev/null; then
-    echo "CocoaPods not found. Installing via homebrew..."
-    brew install cocoapods
+# 3. Move to the workspace root directory where your Podfile lives
+cd "$CI_PRIMARY_REPOSITORY_PATH"
+
+echo "=== Current Directory: $(pwd) ==="
+echo "=== Checking for Podfile ==="
+if [ ! -f "Podfile" ]; then
+    echo "ERROR: Podfile not found at $(pwd)!"
+    exit 1
 fi
 
-# 3. Run the dependency configuration at the root
-pod install
+echo "=== Starting Pod Install ==="
+# Use --deployment flag to ensure a clean, reliable server install matching your Podfile.lock
+pod install --deployment || pod install
